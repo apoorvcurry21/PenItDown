@@ -11,7 +11,7 @@ function Footer() {
         </div>
         <div >
           <a
-            href="https://github.com/vkhanna2004/Blogify"
+            href="https://github.com/apoorvcurry21/PenItDown.git"
             target="_blank"
             rel="noopener noreferrer"
           >
