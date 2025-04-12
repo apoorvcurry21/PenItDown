@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import './App.css'
 import authService from "./appwrite/auth"
@@ -11,28 +11,41 @@ function App() {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    authService.getCurrentUser()
-    .then((userData) => {
-      if (userData) {
-        dispatch(login({userData}))
-      } else {
+    const checkAuth = async () => {
+      try {
+        const userData = await authService.getCurrentUser()
+        if (userData) {
+          dispatch(login({userData}))
+        } else {
+          dispatch(logout())
+        }
+      } catch (error) {
+        // Handle unauthorized access gracefully
+        console.log("User not authenticated")
         dispatch(logout())
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
-    })
-  }, [dispatch]) // Add dispatch as dependency
+    }
+    
+    checkAuth()
+  }, [dispatch])
   
   return !loading ? (
-    <div className='min-h-screen flex flex-wrap content-between bg-zinc-800'>
-      <div className='w-full block'>
+    <div className='min-h-screen flex flex-col bg-zinc-800'>
+      <div className='flex-1 flex flex-col'>
         <Header />
-        <main>
+        <main className='flex-1 px-3 sm:px-4 md:px-8 py-4 md:py-6 max-w-7xl mx-auto w-full'>
           <Outlet />
         </main>
         <Footer />
       </div>
     </div>
-  ) : <Loader className1="h-20 w-20 bg-zinc-800" className2="bg-zinc-800"/>
+  ) : (
+    <div className="min-h-screen flex items-center justify-center bg-zinc-800">
+      <Loader className1="h-20 w-20 bg-zinc-800" className2="bg-zinc-800"/>
+    </div>
+  )
 }
 
 export default App
