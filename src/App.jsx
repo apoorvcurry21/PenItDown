@@ -32,18 +32,18 @@ function App() {
   }, [dispatch])
   
   return !loading ? (
-    <div className='min-h-screen flex flex-col bg-zinc-800'>
+    <div className='min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'>
       <div className='flex-1 flex flex-col'>
         <Header />
-        <main className='flex-1 px-3 sm:px-4 md:px-8 py-4 md:py-6 max-w-7xl mx-auto w-full'>
+        <main className='flex-1 px-4 sm:px-6 md:px-8 py-6 md:py-8 max-w-7xl mx-auto w-full'>
           <Outlet />
         </main>
         <Footer />
       </div>
     </div>
   ) : (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-800">
-      <Loader className1="h-20 w-20 bg-zinc-800" className2="bg-zinc-800"/>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <Loader className1="h-20 w-20" className2="bg-teal-500"/>
     </div>
   )
 }
