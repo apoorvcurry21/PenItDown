@@ -16,8 +16,7 @@ export default function PostForm({ post }) {
       },
     });
 
-  const [loading, setLoading] = useState(false); // State variable for loading state
-
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const userData = useSelector((state) => state.auth.userData);
 
@@ -26,19 +25,31 @@ export default function PostForm({ post }) {
     try {
       console.log("Submitting post data:", data);
       if (post) {
-        // ... existing update logic ...
+        const file = data.image[0] ? await appwriteService.uploadFile(data.image[0]) : null;
+
+        if (file) {
+          appwriteService.deleteFile(post.featuredImage);
+        }
+
+        const dbPost = await appwriteService.updatePost(post.$id, {
+          ...data,
+          featuredImage: file ? file.$id : post.featuredImage,
+          userId: userData.$id
+        });
+
+        if (dbPost) {
+          navigate(`/post/${dbPost.$id}`);
+        }
       } else {
-        // Create base post data with all required fields
         const postData = {
           title: data.title,
-          slug: data.slug || slugTransform(data.title),
+          slug: slugTransform(data.title),
           content: data.content,
           status: data.status || 'active',
           userId: userData.$id,
-          featuredImage: '' // Always provide a default value
+          featuredImage: ''
         };
 
-        // Try to upload image if provided
         if (data.image?.[0]) {
           try {
             const file = await appwriteService.uploadFile(data.image[0]);
@@ -50,7 +61,6 @@ export default function PostForm({ post }) {
           }
         }
 
-        // Create the post with all required fields
         const dbPost = await appwriteService.createPost(postData);
         console.log("Created post:", dbPost);
 
@@ -83,7 +93,6 @@ export default function PostForm({ post }) {
       if (name === "title") {
         setValue("slug", slugTransform(value.title), { shouldValidate: true });
         
-        // Auto-fill content based on title
         switch(value.title.toLowerCase()) {
           case "tennis":
             setValue("content", `
@@ -324,20 +333,22 @@ function Counter() {
     return () => subscription.unsubscribe();
   }, [watch, slugTransform, setValue]);
 
-  return loading? <Loader className1="h-20 w-20 bg-zinc-800" className2="bg-zinc-800"/> : (
+  return loading ? (
+    <Loader className1="h-20 w-20 bg-zinc-800" className2="bg-zinc-800" />
+  ) : (
     <form onSubmit={handleSubmit(submit)} className="flex flex-wrap">
       <div className="w-2/3 px-2 rounded-xl border border-black/10 bg-zinc-900 md:my-4 text-gray-300">
         <Input
           label="Title :"
           placeholder="Title"
-          className="mb-4 focus:bg-zinc-500/65 "
+          className="mb-4 focus:bg-zinc-500/65"
           {...register("title", { required: true })}
         />
         <Input
           label="Slug :"
           placeholder="Slug"
           readOnly
-          className="mb-4 cursor-not-allowed  hover:bg-zinc-800"
+          className="mb-4 cursor-not-allowed hover:bg-zinc-800"
           {...register("slug", { required: true })}
           onInput={(e) => {
             setValue("slug", slugTransform(e.currentTarget.value), {
@@ -352,7 +363,7 @@ function Counter() {
           defaultValue={getValues("content")}
         />
       </div>
-      <div className="w-1/3 px-2 rounded-xl border border-black/10 bg-zinc-900 md:my-4 text-gray-300 ">
+      <div className="w-1/3 px-2 rounded-xl border border-black/10 bg-zinc-900 md:my-4 text-gray-300">
         <Input
           label="Featured Image :"
           type="file"
@@ -361,7 +372,7 @@ function Counter() {
           {...register("image")}
         />
         {post && (
-          <div className="w-full mb-4 ">
+          <div className="w-full mb-4">
             <img
               src={appwriteService.getFilePreview(post.featuredImage)}
               alt={post.title}

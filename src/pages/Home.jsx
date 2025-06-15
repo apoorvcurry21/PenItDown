@@ -15,36 +15,40 @@ function Home() {
     const fetchData = async () => {
       if (authStatus) {
         try {
-          const posts = await appwriteService.getPosts();
-          if (posts) {
-            setPosts(posts.documents);
+          const userData = await authService.getCurrentUser();
+          if (userData) {
+            setUsername(userData.name);
+            // Check if it's the guest account
+            if (userData.email === "novakgoat@gmail.com") {
+              const posts = await appwriteService.getPublicPosts();
+              if (posts) {
+                setPosts(posts.documents);
+              }
+            } else {
+              // For new users, only show their own posts
+              const posts = await appwriteService.getUserPosts(userData.$id);
+              if (posts) {
+                setPosts(posts.documents);
+              }
+            }
           }
         } catch (error) {
           console.error("Error fetching posts:", error);
         }
       } else {
-        setPosts([]);
+        try {
+          const posts = await appwriteService.getPublicPosts();
+          if (posts) {
+            setPosts(posts.documents);
+          }
+        } catch (error) {
+          console.error("Error fetching public posts:", error);
+        }
       }
       setLoading(false);
     };
 
-    const fetchUserData = async () => {
-      if (authStatus) {
-        try {
-          const userData = await authService.getCurrentUser();
-          if (userData) {
-            setUsername(userData.name);
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      } else {
-        setUsername("");
-      }
-    };
-
     fetchData();
-    fetchUserData();
   }, [authStatus]);
 
   if (loading) {
@@ -96,6 +100,15 @@ function Home() {
     );
   }
 
+  // Sort posts: TABLE TENNIS first, then TENNIS, then the rest
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (a.title.toLowerCase() === 'table tennis') return -1;
+    if (b.title.toLowerCase() === 'table tennis') return 1;
+    if (a.title.toLowerCase() === 'tennis') return 1;
+    if (b.title.toLowerCase() === 'tennis') return -1;
+    return 0;
+  });
+
   return (
     <div className="w-full py-8">
       <Container>
@@ -106,7 +119,7 @@ function Home() {
           {username}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {posts.map((post) => (
+          {sortedPosts.map((post) => (
             <div key={post.$id} className="w-full">
               <PostCard {...post} />
             </div>

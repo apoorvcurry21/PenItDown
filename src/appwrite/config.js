@@ -1,5 +1,5 @@
 import conf from "../conf/conf.js";
-import { Client, ID, Databases, Storage } from "appwrite";
+import { Client, ID, Databases, Storage, Query } from "appwrite";
 
 export class Service {
   client = new Client();
@@ -105,6 +105,38 @@ export class Service {
       );
     } catch (error) {
       console.log("Appwrite service :: getPosts :: error", error);
+      return false;
+    }
+  }
+
+  async getUserPosts(userId) {
+    try {
+      return await this.databases.listDocuments(
+        conf.appwriteDatabaseId,
+        conf.appwriteCollectionId,
+        [
+          Query.equal('userId', userId),
+          Query.orderDesc('$createdAt')
+        ]
+      );
+    } catch (error) {
+      console.log("Appwrite service :: getUserPosts :: error", error);
+      return false;
+    }
+  }
+
+  async getPublicPosts() {
+    try {
+      return await this.databases.listDocuments(
+        conf.appwriteDatabaseId,
+        conf.appwriteCollectionId,
+        [
+          Query.equal('status', 'active'),
+          Query.orderDesc('$createdAt')
+        ]
+      );
+    } catch (error) {
+      console.log("Appwrite service :: getPublicPosts :: error", error);
       return false;
     }
   }

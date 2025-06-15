@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Container, Loader, PostCard } from "../components";
 import appwriteService from "../appwrite/config";
+import authService from "../appwrite/auth";
 import { Link } from "react-router-dom";
 
 function AllPosts() {
@@ -9,30 +10,51 @@ function AllPosts() {
 
   useEffect(() => {
     setLoading(true);
-    try {
-      appwriteService.getPosts([]).then((posts) => {
-        console.log("Fetched posts:", posts); // Debug log
-        if (posts) {
-          setPosts(posts.documents);
-        } else {
-          console.error("No posts returned from getPosts");
+    const fetchPosts = async () => {
+      try {
+        const userData = await authService.getCurrentUser();
+        if (userData) {
+          // If it's the guest account, show all public posts
+          if (userData.email === "novakgoat@gmail.com") {
+            const posts = await appwriteService.getPublicPosts();
+            if (posts) {
+              setPosts(posts.documents);
+            }
+          } else {
+            // For new users, show their own posts
+            const posts = await appwriteService.getUserPosts(userData.$id);
+            if (posts) {
+              setPosts(posts.documents);
+            }
+          }
         }
-      });
-    } catch (error) {
-      console.error("AllPosts :: fetchPosts error:", error);
-    } finally {
-      setLoading(false);
-    }
+      } catch (error) {
+        console.error("AllPosts :: fetchPosts error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
   }, []);
+
+  // Sort posts: TABLE TENNIS first, then TENNIS, then the rest
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (a.title.toLowerCase() === 'table tennis') return -1;
+    if (b.title.toLowerCase() === 'table tennis') return 1;
+    if (a.title.toLowerCase() === 'tennis') return 1;
+    if (b.title.toLowerCase() === 'tennis') return -1;
+    return 0;
+  });
 
   return loading ? (
     <Loader className1="h-20 w-20 bg-zinc-800" className2="bg-zinc-800"/>
-  ) : !(posts.length === 0) ? (
+  ) : !(sortedPosts.length === 0) ? (
     <div className="w-full py-8">
       <Container>
         <h1 className="text-zinc-200 text-xl mb-4">All Posts:</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {posts.map((post) => (
+          {sortedPosts.map((post) => (
             <div key={post.$id} className="w-full">
               <PostCard {...post} />
             </div>
